@@ -1,0 +1,27 @@
+driver:
+  kind: modern_ebpf
+
+collectors:
+  kubernetes:
+    enabled: true
+
+falco:
+  json_output: true
+  json_include_output_property: true
+  file_output:
+    enabled: false
+  stdout_output:
+    enabled: true
+
+# Falcosidekick receives events from Falco and exposes them as Prometheus metrics
+# (falcosidekick_inputs{rule,priority,...}).
+falcosidekick:
+  enabled: true
+  webui:
+    enabled: false
+  serviceMonitor:
+    enabled: true
+    additionalLabels:
+      release: prometheus-stack
+
+# Custom rules are supplied separately via -f k8s/security/falco-rules-custom.yaml

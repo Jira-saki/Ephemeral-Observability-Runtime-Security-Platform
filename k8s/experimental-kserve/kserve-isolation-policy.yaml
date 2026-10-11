@@ -1,0 +1,44 @@
+# kserve-isolation-policy.yaml
+# PHASE 3 (DEFERRED): requires KServe. Not applied by the CKS drills.
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: kserve-isolation-policy
+  namespace: kserve-test
+spec:
+  podSelector:
+    matchLabels:
+      serving.kserve.io/inferenceservice: sklearn-iris
+  policyTypes:
+    - Ingress
+    - Egress
+  ingress:
+    - from:
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: ingress-nginx
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: monitoring
+      ports:
+        - protocol: TCP
+          port: 8080
+  egress:
+    # DNS over both UDP and TCP (TCP fallback for large responses)
+    - to:
+        - namespaceSelector: {}
+          podSelector:
+            matchLabels:
+              k8s-app: kube-dns
+      ports:
+        - protocol: UDP
+          port: 53
+        - protocol: TCP
+          port: 53
+    # HTTPS egress to pull the model (Google Storage)
+    - to:
+        - ipBlock:
+            cidr: 0.0.0.0/0
+      ports:
+        - protocol: TCP
+          port: 443

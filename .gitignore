@@ -1,0 +1,6 @@
+.DS_Store
+*.tar
+app/go-telemetry-api
+reports/*.json
+.venv/
+__pycache__/

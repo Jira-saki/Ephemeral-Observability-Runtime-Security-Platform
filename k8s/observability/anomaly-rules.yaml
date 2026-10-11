@@ -1,0 +1,32 @@
+# anomaly-rules.yaml
+# Targets the Go telemetry API (k8s/base) so it works without KServe.
+apiVersion: monitoring.coreos.com/v1
+kind: PrometheusRule
+metadata:
+  name: app-anomaly-rules
+  namespace: monitoring
+  labels:
+    release: prometheus-stack   # must match the kube-prometheus-stack Helm release name
+spec:
+  groups:
+    - name: app.anomaly
+      rules:
+        - alert: AppRequestSpike
+          expr: |
+            sum(rate(http_requests_total{namespace="app-workload"}[1m]))
+            > 3 * sum(rate(http_requests_total{namespace="app-workload"}[10m]))
+          for: 30s
+          labels:
+            severity: warning
+          annotations:
+            summary: "Abrupt traffic surge detected on go-telemetry-api"
+
+        - alert: AppLatencySpikeP99
+          expr: |
+            histogram_quantile(0.99, sum(rate(http_request_duration_seconds_bucket{namespace="app-workload"}[1m])) by (le))
+            > 2 * histogram_quantile(0.99, sum(rate(http_request_duration_seconds_bucket{namespace="app-workload"}[15m])) by (le))
+          for: 1m
+          labels:
+            severity: critical
+          annotations:
+            summary: "go-telemetry-api P99 latency doubled abruptly"

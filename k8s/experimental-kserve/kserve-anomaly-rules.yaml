@@ -1,0 +1,32 @@
+# kserve-anomaly-rules.yaml
+# PHASE 3 (DEFERRED): requires KServe. Not applied by the CKS drills.
+apiVersion: monitoring.coreos.com/v1
+kind: PrometheusRule
+metadata:
+  name: kserve-anomaly-rules
+  namespace: monitoring
+  labels:
+    release: prometheus-stack
+spec:
+  groups:
+    - name: kserve.anomaly
+      rules:
+        - alert: KServePredictSpike
+          expr: |
+            sum(rate(http_requests_total{serving_kserve_io_inferenceservice="sklearn-iris"}[1m]))
+            > 3 * sum(rate(http_requests_total{serving_kserve_io_inferenceservice="sklearn-iris"}[10m]))
+          for: 30s
+          labels:
+            severity: warning
+          annotations:
+            summary: "Abrupt traffic surge detected on KServe iris model"
+
+        - alert: KServeLatencySpikeP99
+          expr: |
+            histogram_quantile(0.99, sum(rate(request_latencies_bucket[1m])) by (le))
+            > 2 * histogram_quantile(0.99, sum(rate(request_latencies_bucket[15m])) by (le))
+          for: 1m
+          labels:
+            severity: critical
+          annotations:
+            summary: "KServe P99 Inference Latency doubled abruptly"

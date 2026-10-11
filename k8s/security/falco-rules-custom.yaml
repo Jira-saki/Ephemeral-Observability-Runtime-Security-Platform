@@ -1,0 +1,16 @@
+# Helm values overlay: Falco chart loads customRules entries as extra rules files.
+# Host install: copy the rules body to /etc/falco/falco_rules.local.yaml
+customRules:
+  rules-custom.yaml: |-
+    - rule: Shell Spawned Inside Hardened Workload
+      desc: Detect any shell spawned inside a pod in the app-workload namespace
+      condition: >
+        container.id != host and
+        k8s.ns.name = "app-workload" and
+        spawned_process and
+        proc.name in (bash, sh, zsh, dash)
+      output: >
+        CRITICAL: Unauthorized Shell Spawned in Hardened Pod
+        (user=%user.name pod=%k8s.pod.name ns=%k8s.ns.name cmd=%proc.cmdline)
+      priority: CRITICAL
+      tags: [cks, runtime]

@@ -1,0 +1,73 @@
+{
+  "annotations": { "list": [] },
+  "editable": true,
+  "fiscalYearStartMonth": 0,
+  "graphTooltip": 0,
+  "id": null,
+  "links": [],
+  "liveNow": false,
+  "panels": [
+    {
+      "id": 1,
+      "title": "Throughput (RPS)",
+      "type": "timeseries",
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 0 },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "sum(rate(http_requests_total{namespace=\"app-workload\"}[1m])) by (path, code)",
+          "legendFormat": "{{path}} [{{code}}]"
+        }
+      ]
+    },
+    {
+      "id": 2,
+      "title": "Error Rate (5xx ratio)",
+      "type": "timeseries",
+      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 0 },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "sum(rate(http_requests_total{namespace=\"app-workload\",code=~\"5..\"}[1m])) / clamp_min(sum(rate(http_requests_total{namespace=\"app-workload\"}[1m])), 1e-9)",
+          "legendFormat": "5xx ratio"
+        }
+      ]
+    },
+    {
+      "id": 3,
+      "title": "Latency P95 / P99 (Seconds)",
+      "type": "timeseries",
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 8 },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "histogram_quantile(0.95, sum(rate(http_request_duration_seconds_bucket{namespace=\"app-workload\"}[1m])) by (le, path))",
+          "legendFormat": "P95 - {{path}}"
+        },
+        {
+          "refId": "B",
+          "expr": "histogram_quantile(0.99, sum(rate(http_request_duration_seconds_bucket{namespace=\"app-workload\"}[1m])) by (le, path))",
+          "legendFormat": "P99 - {{path}}"
+        }
+      ]
+    },
+    {
+      "id": 4,
+      "title": "Falco Runtime Threat Detections",
+      "type": "timeseries",
+      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 8 },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "sum(increase(falcosidekick_inputs{priority=~\"(?i)critical|warning\"}[1m])) by (rule)",
+          "legendFormat": "Threat: {{rule}}"
+        }
+      ]
+    }
+  ],
+  "schemaVersion": 38,
+  "tags": ["golden-signals", "security"],
+  "time": { "from": "now-30m", "to": "now" },
+  "title": "Application Golden Signals & Threat Monitoring",
+  "uid": "app-golden-signals"
+}
